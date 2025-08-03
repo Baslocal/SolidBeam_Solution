@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  solidbeam-clamav-web-dev:
+    build: .
+    container_name: solidbeam-clamav-web-dev
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_APP=app.py
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - CLAMAV_WEB_PORT=5000
+      - CLAMAV_WEB_HOST=0.0.0.0
+      - CLAMAV_DB_PATH=/opt/clamav-web/data
+      - CLAMAV_QUARANTINE_PATH=/opt/clamav-web/quarantine
+      - CLAMAV_LOGS_PATH=/opt/clamav-web/logs
+    volumes:
+      - ./data:/opt/clamav-web/data
+      - ./quarantine:/opt/clamav-web/quarantine
+      - ./logs:/opt/clamav-web/logs
+      - ./app.py:/opt/clamav-web/app/app.py
+      - ./templates:/opt/clamav-web/app/templates
+      - ./static:/opt/clamav-web/app/static
+      - clamav_db:/var/lib/clamav
+      - /tmp:/tmp/uploads:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - clamav-network
+
+volumes:
+  clamav_db:
+    driver: local
+
+networks:
+  clamav-network:
+    driver: bridge

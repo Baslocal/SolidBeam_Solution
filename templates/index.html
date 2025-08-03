@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolidBeam Solution - ClamAV Web Interface</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-shield-alt me-2"></i>
+                SolidBeam Solution
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text">
+                    <i class="fas fa-circle text-success me-1" id="status-indicator"></i>
+                    <span id="status-text">Online</span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>System Metrics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-item">
+                            <label>CPU Usage</label>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="cpu-bar" role="progressbar"></div>
+                            </div>
+                            <small id="cpu-text">0%</small>
+                        </div>
+                        <div class="metric-item">
+                            <label>Memory Usage</label>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="memory-bar" role="progressbar"></div>
+                            </div>
+                            <small id="memory-text">0%</small>
+                        </div>
+                        <div class="metric-item">
+                            <label>Disk Usage</label>
+                            <div class="progress mb-2">
+                                <div class="progress-bar" id="disk-bar" role="progressbar"></div>
+                            </div>
+                            <small id="disk-text">0%</small>
+                        </div>
+                        <div class="metric-item">
+                            <label>Uptime</label>
+                            <small id="uptime-text">0 days</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary btn-sm w-100 mb-2" onclick="runQuickScan()">
+                            <i class="fas fa-bolt me-1"></i>Quick Scan
+                        </button>
+                        <button class="btn btn-info btn-sm w-100 mb-2" onclick="runDiagnostics()">
+                            <i class="fas fa-stethoscope me-1"></i>Diagnostics
+                        </button>
+                        <button class="btn btn-warning btn-sm w-100" onclick="refreshMetrics()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="scan-tab" data-bs-toggle="tab" data-bs-target="#scan" type="button" role="tab">
+                            <i class="fas fa-search me-1"></i>Scan
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                            <i class="fas fa-history me-1"></i>History
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="quarantine-tab" data-bs-toggle="tab" data-bs-target="#quarantine" type="button" role="tab">
+                            <i class="fas fa-archive me-1"></i>Quarantine
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="diagnostics-tab" data-bs-toggle="tab" data-bs-target="#diagnostics" type="button" role="tab">
+                            <i class="fas fa-stethoscope me-1"></i>Diagnostics
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="mainTabsContent">
+                    <!-- Scan Tab -->
+                    <div class="tab-pane fade show active" id="scan" role="tabpanel">
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-folder-open me-2"></i>Custom Scan</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="customScanForm">
+                                            <div class="mb-3">
+                                                <label for="scanPath" class="form-label">Path to Scan</label>
+                                                <input type="text" class="form-control" id="scanPath" placeholder="/path/to/scan" value="/tmp">
+                                            </div>
+                                            <div class="mb-3 form-check">
+                                                <input type="checkbox" class="form-check-input" id="recursiveScan" checked>
+                                                <label class="form-check-label" for="recursiveScan">Recursive Scan</label>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-search me-1"></i>Start Scan
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="mb-0"><i class="fas fa-upload me-2"></i>File Upload</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="uploadForm">
+                                            <div class="mb-3">
+                                                <label for="fileUpload" class="form-label">Select File</label>
+                                                <input type="file" class="form-control" id="fileUpload" accept="*/*">
+                                            </div>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-upload me-1"></i>Upload & Scan
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scan Results -->
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-clipboard-list me-2"></i>Scan Results</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="scanResults">
+                                    <p class="text-muted">No scan results yet. Start a scan to see results here.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- History Tab -->
+                    <div class="tab-pane fade" id="history" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-history me-2"></i>Scan History</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadHistory()">
+                                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Type</th>
+                                                <th>Path</th>
+                                                <th>Status</th>
+                                                <th>Infected</th>
+                                                <th>Duration</th>
+                                                <th>Timestamp</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyTable">
+                                            <tr>
+                                                <td colspan="6" class="text-center text-muted">Loading...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quarantine Tab -->
+                    <div class="tab-pane fade" id="quarantine" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-archive me-2"></i>Quarantine</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadQuarantine()">
+                                    <i class="fas fa-sync-alt me-1"></i>Refresh
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Original Path</th>
+                                                <th>Virus</th>
+                                                <th>Size</th>
+                                                <th>Quarantined</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="quarantineTable">
+                                            <tr>
+                                                <td colspan="5" class="text-center text-muted">Loading...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Diagnostics Tab -->
+                    <div class="tab-pane fade" id="diagnostics" role="tabpanel">
+                        <div class="card mt-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-stethoscope me-2"></i>System Diagnostics</h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="runDiagnostics()">
+                                    <i class="fas fa-sync-alt me-1"></i>Run Tests
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="diagnosticsResults">
+                                    <p class="text-muted">Click "Run Tests" to perform system diagnostics.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Modal -->
+    <div class="modal fade" id="loadingModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-body text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 mb-0" id="loadingText">Processing...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

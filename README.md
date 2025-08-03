@@ -204,7 +204,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 4. Add tests
 5. Submit a pull request
 
-## 📞 Support
+
 
 For support and questions:
 - Create an issue in the repository
